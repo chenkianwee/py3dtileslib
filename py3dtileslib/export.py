@@ -8,7 +8,7 @@ import json
 import os
 import errno
 import numpy as np
-from py3dtiles import TriangleSoup, GlTF, B3dm, BatchTable
+from py3dtileslib import TriangleSoup, GlTF, B3dm, BatchTable
 
 
 class BoundingBox():

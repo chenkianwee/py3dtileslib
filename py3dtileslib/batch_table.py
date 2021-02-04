@@ -25,3 +25,14 @@ class BatchTable(object):
         bt_json += ' ' * (4 - len(bt_json) % 4)
         # returns an array of binaries representing the batch table
         return np.fromstring(bt_json, dtype=np.uint8)
+    
+    def from_array(self, array):
+        """
+        Parameters
+        ----------
+        array : numpy.array
+
+        """
+        bt_json_str = ''.join([c.decode('UTF-8') for c in array.view('c')])
+        bt_json = json.loads(bt_json_str)
+        self.header = bt_json

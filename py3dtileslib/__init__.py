@@ -8,8 +8,8 @@ from .pnts import Pnts
 from .b3dm import B3dm
 from .batch_table import BatchTable
 from .wkb_utils import TriangleSoup
-from .export import Node
+from .tileset import Node, Tileset
 
 __version__ = '2.0.0'
 __all__ = ['TileContentReader', 'convert_to_ecef', 'TileContent', 'Feature', 'GlTF', 'Pnts',
-           'B3dm', 'BatchTable', 'TriangleSoup', 'Node']
+           'B3dm', 'BatchTable', 'TriangleSoup', 'Node', 'Tileset']

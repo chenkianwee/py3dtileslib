@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-
+import os
+import tempfile
 import numpy as np
 from pyproj import CRS, Transformer
+from pygltflib import GLTF2
+
 from .pnts import Pnts
 from .b3dm import B3dm
 
@@ -35,3 +38,53 @@ class TileContentReader(object):
         if magic == 'b3dm':
             return B3dm.from_array(array)
         return None
+    
+def glb2arr(gltf):
+    """
+    Convert GLTF2 object from pygltflib to numpy array
+    
+    Parameters
+    ----------
+    gltf : pygltflib.GLTF2
+
+    Returns
+    -------
+    arr : numpy.array
+    """
+        
+    # extract array
+    #write to a temp file
+    tmp_glb = tempfile.NamedTemporaryFile(suffix='.glb', prefix='py3dtiles_tempglb_', delete = False)
+    tmp_glb_path = tmp_glb.name
+    tmp_glb.close()
+    gltf.save_binary(tmp_glb_path)
+    
+    with open(tmp_glb_path, 'rb') as f:
+        data = f.read()
+        glTF_arr = np.frombuffer(data, dtype=np.uint8)
+    
+    os.unlink(tmp_glb_path)
+    return glTF_arr
+
+def arr2gltf(gltf_arr):
+    """
+    Convert numpy array to GLTF2 object
+    
+    Parameters
+    ----------
+    arr : numpy.array
+
+    Returns
+    -------
+    gltf : pygltflib.GLTF2
+    
+    """
+    #write to a temp file
+    tmp_glb = tempfile.NamedTemporaryFile(suffix='.glb', prefix='py3dtiles_tempglb_', delete = False)
+    tmp_glb.write(bytes(gltf_arr))
+    tmp_glb_path = tmp_glb.name
+    tmp_glb.close()
+    glTF = GLTF2().load(tmp_glb_path)
+    os.unlink(tmp_glb_path)
+    
+    return glTF
