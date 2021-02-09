@@ -112,36 +112,45 @@ class FeatureTableHeader(object):
         # global semantics
         self.points_length = 0
         self.rtc = None
+        
+        #b3dm semantics
+        self.batch_length = None
 
     def to_array(self):
         jsond = self.to_json()
         json_str = json.dumps(jsond).replace(" ", "")
         n = len(json_str) + 28
         json_str += ' ' * (4 - n % 4)
-        return np.frombuffer(json_str.encode('utf-8'), dtype=np.uint8)
-
+        # return np.frombuffer(json_str.encode('utf-8'), dtype=np.uint8)
+        return np.fromstring(json_str, dtype=np.uint8)
+        
     def to_json(self):
         jsond = {}
 
         # length
-        jsond['POINTS_LENGTH'] = self.points_length
+        if self.points_length != 0:
+            jsond['POINTS_LENGTH'] = self.points_length
 
         # rtc
         if self.rtc:
             jsond['RTC_CENTER'] = self.rtc
 
         # positions
-        offset = {'byteOffset': self.positions_offset}
-        if self.positions == SemanticPoint.POSITION:
-            jsond['POSITION'] = offset
-        elif self.positions == SemanticPoint.POSITION_QUANTIZED:
-            jsond['POSITION_QUANTIZED'] = offset
+        if self.positions_offset != 0:
+            offset = {'byteOffset': self.positions_offset}
+            if self.positions == SemanticPoint.POSITION:
+                jsond['POSITION'] = offset
+            elif self.positions == SemanticPoint.POSITION_QUANTIZED:
+                jsond['POSITION_QUANTIZED'] = offset
 
         # colors
         offset = {'byteOffset': self.colors_offset}
         if self.colors == SemanticPoint.RGB:
             jsond['RGB'] = offset
-
+        
+        #batch_length
+        if self.batch_length:
+            jsond['BATCH_LENGTH'] = self.batch_length
         return jsond
 
     @staticmethod
@@ -261,7 +270,13 @@ class FeatureTableHeader(object):
             fth.rtc = jsond['RTC_CENTER']
         else:
             fth.rtc = None
-
+        
+        # RTC (Relative To Center)
+        if "BATCH_LENGTH" in jsond:
+            fth.batch_length = jsond['BATCH_LENGTH']
+        else:
+            fth.batch_length = None
+            
         return fth
 
 
@@ -286,7 +301,9 @@ class FeatureTableBody(object):
         b = FeatureTableBody()
 
         # extract positions
-        b.positions_itemsize = fth.positions_dtype.itemsize
+        if fth.positions_dtype != None:
+            b.positions_itemsize = fth.positions_dtype.itemsize
+            
         b.positions_arr = np.array([], dtype=np.uint8)
 
         if fth.colors_dtype is not None:
@@ -320,10 +337,11 @@ class FeatureTableBody(object):
         npoints = fth.points_length
 
         # extract positions
-        pos_size = fth.positions_dtype.itemsize
-        pos_offset = fth.positions_offset
-        b.positions_arr = array[pos_offset:pos_offset + npoints * pos_size]
-        b.positions_itemsize = pos_size
+        if fth.positions_dtype != None:
+            pos_size = fth.positions_dtype.itemsize
+            pos_offset = fth.positions_offset
+            b.positions_arr = array[pos_offset:pos_offset + npoints * pos_size]
+            b.positions_itemsize = pos_size
 
         # extract colors
         if fth.colors != SemanticPoint.NONE:
@@ -355,9 +373,13 @@ class FeatureTable(object):
         return self.header.points_length
 
     def to_array(self):
+        #TODO FIGURE OUT WHAT IS WRONG WHEN TWO ARRAY CONCATENATE
         fth_arr = self.header.to_array()
         ftb_arr = self.body.to_array()
-        return np.concatenate((fth_arr, ftb_arr))
+        if len(ftb_arr) == 0:
+            return fth_arr
+        else:
+            return np.concatenate((fth_arr, ftb_arr))
 
     @staticmethod
     def from_array(th, array):
@@ -420,3 +442,9 @@ class FeatureTable(object):
         col = self.body.colors(n)
         return Feature.from_array(self.header.positions_dtype, pos,
                                   self.header.colors_dtype, col)
+    
+    def add_batch_length(self, batch_length):
+        self.header.batch_length = batch_length
+    
+    def add_rtc(self, rtc):
+        self.header.rtc = rtc

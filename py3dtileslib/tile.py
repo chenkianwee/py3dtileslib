@@ -4,7 +4,6 @@ import numpy as np
 from enum import Enum
 from abc import ABC, abstractmethod
 
-
 class TileContent(ABC):
 
     def __init__(self):
