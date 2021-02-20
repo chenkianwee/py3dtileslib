@@ -180,3 +180,10 @@ class Node(object):
             gltf.save(gltf_path)
     
             return foldername + '/' + filename
+        
+        if magic == b"pnts":
+            filename = str(self.uniqid)+'.pnts'
+            file_path = os.path.join(tile_path, filename)
+            content.save_as(file_path)
+                
+            return foldername + '/' + filename

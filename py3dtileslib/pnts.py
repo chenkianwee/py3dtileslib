@@ -29,6 +29,7 @@ class Pnts(TileContent):
         tb.feature_table = ft
 
         th = PntsHeader()
+        th.sync(tb)
 
         t = TileContent()
         t.body = tb

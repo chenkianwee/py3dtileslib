@@ -97,7 +97,7 @@ class FeatureTableHeader(object):
 
     def __init__(self):
         # point semantics
-        self.positions = SemanticPoint.POSITION
+        self.positions = SemanticPoint.NONE
         self.positions_offset = 0
         self.positions_dtype = None
 
@@ -115,6 +115,18 @@ class FeatureTableHeader(object):
         
         #b3dm semantics
         self.batch_length = None
+        
+        #i3dm semantics
+        self.normal_up = None
+        self.normal_right = None
+        self.scale = None 
+        self.scale_non_uniform = None
+        self.batch_id = None
+        
+        #i3dm semantics global semantics
+        self.instances_length = None
+        self.east_north_up = None
+        
 
     def to_array(self):
         jsond = self.to_json()
@@ -136,7 +148,7 @@ class FeatureTableHeader(object):
             jsond['RTC_CENTER'] = self.rtc
 
         # positions
-        if self.positions_offset != 0:
+        if self.positions == SemanticPoint.POSITION:
             offset = {'byteOffset': self.positions_offset}
             if self.positions == SemanticPoint.POSITION:
                 jsond['POSITION'] = offset

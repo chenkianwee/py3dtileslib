@@ -8,6 +8,7 @@ from pygltflib import GLTF2
 
 from .pnts import Pnts
 from .b3dm import B3dm
+from .i3dm import I3dm
 
 import geomie3d
 
@@ -39,6 +40,9 @@ class TileContentReader(object):
             return Pnts.from_array(array)
         if magic == 'b3dm':
             return B3dm.from_array(array)
+        if magic == 'i3dm':
+            return I3dm.from_array(array)
+        
         return None
     
 def glb2arr(gltf):
