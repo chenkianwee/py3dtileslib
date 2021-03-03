@@ -4,29 +4,52 @@ import numpy as np
 
 from .tile import TileContent, TileHeader, TileBody, TileType
 from .feature_table import FeatureTable
+from .batch_table import BatchTable
 
 
 class Pnts(TileContent):
 
     @staticmethod
-    def from_features(pdtype, cdtype, features):
+    def from_features(features, pdtype = None, cdtype = None, ndtype = None, batchid_dtype = None, bt = None):
         """
         Parameters
         ----------
+        features : Feature[]
+        
         dtype : numpy.dtype
             Numpy description of a single feature
-
-        features : Feature[]
-
+        
+        cdtype : numpy.dtype
+            Numpy description of a color
+            
+        ndtype : numpy.dtype
+            Numpy description of a normal
+        
+        biddtype : numpy.dtype
+            Numpy description of a batch id 
+        
+        bt : BatchTable
+            Batchtable object 
+            
         Returns
         -------
         tile : TileContent
+        
+        pdtype = np.dtype([('X', '<f4'), ('Y', '<f4'), ('Z', '<f4')])
+        cdtype = np.dtype([('Red', np.uint8), ('Green', np.uint8), ('Blue', np.uint8)])
+        position = np.array([(0,1,0)], dtype=dt)
+        colour = np.array([(255,0,0)], dtype=dt2)
+        
+        # create a new feature from a uint8 numpy array
+        pnt = py3dtileslib.Pnts.from_features(feature_list, pdtype = pdtype, cdtype = cdtype)
+        
         """
 
-        ft = FeatureTable.from_features(pdtype, cdtype, features)
+        ft = FeatureTable.from_features(features, 'pnts', pdtype = pdtype, cdtype = cdtype, normal_dtype = ndtype, batchid_dtype = batchid_dtype)
 
         tb = PntsBody()
         tb.feature_table = ft
+        tb.batch_table = bt
 
         th = PntsHeader()
         th.sync(tb)
@@ -138,14 +161,17 @@ class PntsHeader(TileHeader):
 
         return h
 
-
 class PntsBody(TileBody):
     def __init__(self):
         self.feature_table = FeatureTable()
-        # TODO : self.batch_table = BatchTable()
+        self.batch_table = BatchTable()
 
     def to_array(self):
-        return self.feature_table.to_array()
+        ft_arr = self.feature_table.to_array()
+        if self.batch_table is not None:
+            ft_arr = np.concatenate((ft_arr, self.batch_table.to_array()))
+            
+        return ft_arr
 
     @staticmethod
     def from_array(th, array):
@@ -167,13 +193,18 @@ class PntsBody(TileBody):
         ft = FeatureTable.from_array(th, ft_arr)
 
         # build batch table
-        # bt_len = th.bt_json_byte_length + th.bt_bin_byte_length
-        # bt_arr = array[ft_len:ft_len+ba_len]
-        # bt = BatchTable.from_array(th, bt_arr)
-
+        bt_json_len = th.bt_json_byte_length
+        bt_json_arr = array[ft_len:ft_len + bt_json_len]
+        
+        # bt_bin_len = th.bt_bin_byte_length
+        # bt_bin_arr = array[ft_len + bt_json_len:ft_len + bt_json_len + bt_bin_len]
+        
+        bt = BatchTable()
+        bt.from_array(bt_json_arr)
+        
         # build tile body with feature table
         b = PntsBody()
         b.feature_table = ft
-        # b.batch_table = bt
+        b.batch_table = bt
 
         return b

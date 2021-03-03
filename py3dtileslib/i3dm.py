@@ -8,40 +8,45 @@ from .feature_table import FeatureTable
 from . import utils 
 
 class I3dm(TileContent):
-
+    
     @staticmethod
-    def from_glTF(gltf, bt=None, ft=None):
+    def from_features(features, gltf, pdtype = None, non_uni_scale_dtype = None, scale_dtype = None, nrmlup_dtype = None, 
+                      nrmlright_dtype = None, batchid_dtype = None, bt = None):
         """
         Parameters
         ----------
+        features : Feature[]
+        
         gltf : GlTF2
             glTF2 object from the pygltflib
 
-        bt : Batch Table (optional)
-            BatchTable object containing per-feature metadata
-            
-        ft : Feature Table
-            FeatureTable object containing per-feature metadata
-            
         Returns
         -------
         tile : TileContent
+        
+        pdtype = np.dtype([('X', '<f4'), ('Y', '<f4'), ('Z', '<f4')])
+        position = np.array([(0,1,0)], dtype=dt)
+        
+        # create a new feature from a uint8 numpy array
+        pnt = py3dtileslib.I3dm.from_features(feature_list, pdtype = pdtype)
+        
         """
-
+        ft = FeatureTable.from_features(features, 'i3dm', pdtype = pdtype, nusdtype = non_uni_scale_dtype,
+                                        scale_dtype = scale_dtype, nrmlup_dtype = nrmlup_dtype, 
+                                        nrmlright_dtype = nrmlright_dtype,  batchid_dtype = batchid_dtype)
         tb = I3dmBody()
-        tb.glTF = gltf
-        tb.batch_table = bt
         tb.feature_table = ft
-
+        tb.batch_table = bt
+        
         th = I3dmHeader()
         th.sync(tb)
 
         t = TileContent()
         t.body = tb
         t.header = th
-
+        
         return t
-
+    
     @staticmethod
     def from_array(array):
         """
@@ -173,30 +178,9 @@ class I3dmBody(TileBody):
         if self.batch_table is not None:
             array = np.concatenate((self.batch_table.to_array(), array))
             
-        if self.feature_table is not None:
-            array = np.concatenate((self.feature_table.to_array(), array))
+        array = np.concatenate((self.feature_table.to_array(), array))
             
         return array
-
-    @staticmethod
-    def from_glTF(glTF):
-        """
-        Parameters
-        ----------
-        th : TileHeader
-
-        glTF : GlTF2
-
-        Returns
-        -------
-        b : TileBody
-        """
-
-        # build tile body
-        b = I3dmBody()
-        b.glTF = glTF
-
-        return b
 
     @staticmethod
     def from_array(th, array):
