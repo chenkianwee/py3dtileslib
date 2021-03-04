@@ -55,7 +55,7 @@ class Feature(object):
             nus_arr = np.array([])
         
         if len(self.scale):
-            scale_arr = np.array([(self.scale['s'])]).view(np.uint8)[0]
+            scale_arr = np.array([(self.scale['s'])]).view(np.uint8)
         else:
             scale_arr = np.array([])
         
@@ -72,7 +72,7 @@ class Feature(object):
             nrmlright_arr = np.array([])
             
         if len(self.batch_id):
-            batch_id_arr = np.array([(self.batch_id['bid'])]).view(np.uint8)[0]
+            batch_id_arr = np.array([(self.batch_id['bid'])]).view(np.uint8)
         else:
             batch_id_arr = np.array([])
             
@@ -293,26 +293,6 @@ class Feature(object):
             
             self.scale[d] = data
     
-    def add_normal_right(self, x_axis):
-        """
-        Parameters
-        ----------
-        x_axis : numpy.array
-            Array of xyz.
-            
-        """
-        # extract scale
-        x_axis_dt = np.dtype([('nux', '<f4'), ('nuy', '<f4'), ('nuz', '<f4')])
-        x_axis = np.array([tuple(x_axis)], dtype=x_axis_dt).view('uint8')
-        
-        off = 0
-        for d in x_axis_dt.names:
-            dt = x_axis_dt[d]
-            data = np.array(x_axis[off:off + dt.itemsize]).view(dt)[0]
-            off += dt.itemsize
-            
-            self.normal_right[d] = data
-    
     def add_normal_up(self, z_axis):
         """
         Parameters
@@ -322,7 +302,7 @@ class Feature(object):
             
         """
          # extract scale
-        z_axis_dt = np.dtype([('nrx', '<f4'), ('nry', '<f4'), ('nrz', '<f4')])
+        z_axis_dt = np.dtype([('nux', '<f4'), ('nuy', '<f4'), ('nuz', '<f4')])
         z_axis = np.array([tuple(z_axis)], dtype=z_axis_dt).view('uint8')
         
         off = 0
@@ -332,6 +312,26 @@ class Feature(object):
             off += dt.itemsize
             
             self.normal_up[d] = data
+            
+    def add_normal_right(self, x_axis):
+        """
+        Parameters
+        ----------
+        x_axis : numpy.array
+            Array of xyz.
+            
+        """
+        # extract scale
+        x_axis_dt = np.dtype([('nrx', '<f4'), ('nry', '<f4'), ('nrz', '<f4')])
+        x_axis = np.array([tuple(x_axis)], dtype=x_axis_dt).view('uint8')
+        
+        off = 0
+        for d in x_axis_dt.names:
+            dt = x_axis_dt[d]
+            data = np.array(x_axis[off:off + dt.itemsize]).view(dt)[0]
+            off += dt.itemsize
+            
+            self.normal_right[d] = data
     
     def add_batch_id(self, batch_id):
         """
@@ -435,8 +435,11 @@ class FeatureTableHeader(object):
         jsond = {}
 
         # length
-        if self.points_length != 0:
+        if self.points_length != None:
             jsond['POINTS_LENGTH'] = self.points_length
+            
+        if self.instances_length != None:
+            jsond['INSTANCES_LENGTH'] = self.instances_length
 
         # rtc
         if self.rtc:
@@ -512,7 +515,7 @@ class FeatureTableHeader(object):
         fth = FeatureTableHeader()
         if ft_type == 'pnts':
             fth.points_length = nfeatures
-        elif ft_type == 'pnts':
+        elif ft_type == 'i3dm':
             fth.instances_length = nfeatures
         
         pos_size = 0
@@ -1169,7 +1172,6 @@ class FeatureTable(object):
             if len(arr_dict['scale']) > 0: 
                 nus_dtype = np.dtype([('s', '<f4')])
         
-        
         if nrmlup_dtype == None:
             arr_dict = features[0].to_array()
             if len(arr_dict['normal_up']) > 0: 
@@ -1184,9 +1186,8 @@ class FeatureTable(object):
             arr_dict = features[0].to_array()
             if len(arr_dict['batch_id']) > 0: 
                 batchid_dtype = np.dtype([('bid', np.uint16)])
-                
         
-        fth = FeatureTableHeader.from_dtype(pdtype, len(features), ft_type = ft_type, colors_dtype = cdtype, normal_dtype = normal_dtype, 
+        fth = FeatureTableHeader.from_dtype(pdtype, len(features), ft_type, colors_dtype = cdtype, normal_dtype = normal_dtype, 
                                             non_uni_scale_dtype = nus_dtype, scale_dtype = scale_dtype, nrmlup_dtype = nrmlup_dtype, 
                                             nrmlright_dtype = nrmlright_dtype, batchid_dtype = batchid_dtype)
         

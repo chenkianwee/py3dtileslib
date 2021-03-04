@@ -266,8 +266,8 @@ def compute_error(bbox):
     
     """
     lwr_left = [bbox[0], bbox[1], bbox[2]]
-    upr_right =  [bbox[3], bbox[4], bbox[5]]
-    error = geomie3d.calculate.dist_btw_xyzs(lwr_left, upr_right)
+    lwr_right =  [bbox[3], bbox[4], bbox[2]]
+    error = geomie3d.calculate.dist_btw_xyzs(lwr_left, lwr_right)
     return error
 
 def compute_bregion(bbox, geo_loc):

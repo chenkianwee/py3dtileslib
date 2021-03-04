@@ -181,9 +181,17 @@ class Node(object):
     
             return foldername + '/' + filename
         
-        if magic == b"pnts":
+        elif magic == b"pnts":
             filename = str(self.uniqid)+'.pnts'
             file_path = os.path.join(tile_path, filename)
             content.save_as(file_path)
                 
             return foldername + '/' + filename
+        
+        elif magic == b"i3dm":
+            filename = str(self.uniqid)+'.i3dm'
+            file_path = os.path.join(tile_path, filename)
+            content.save_as(file_path)
+    
+            return foldername + '/' + filename
+        

@@ -31,10 +31,11 @@ class I3dm(TileContent):
         pnt = py3dtileslib.I3dm.from_features(feature_list, pdtype = pdtype)
         
         """
-        ft = FeatureTable.from_features(features, 'i3dm', pdtype = pdtype, nusdtype = non_uni_scale_dtype,
+        ft = FeatureTable.from_features(features, 'i3dm', pdtype = pdtype, nus_dtype = non_uni_scale_dtype,
                                         scale_dtype = scale_dtype, nrmlup_dtype = nrmlup_dtype, 
                                         nrmlright_dtype = nrmlright_dtype,  batchid_dtype = batchid_dtype)
         tb = I3dmBody()
+        tb.glTF = gltf
         tb.feature_table = ft
         tb.batch_table = bt
         
