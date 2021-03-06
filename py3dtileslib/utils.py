@@ -3,7 +3,7 @@ import os
 import math
 import tempfile
 import numpy as np
-from pyproj import CRS, Transformer
+from pyproj import Transformer
 from pygltflib import GLTF2
 
 from .pnts import Pnts
@@ -14,14 +14,6 @@ import geomie3d
 
 class SrsInMissingException(Exception):
     pass
-
-
-def convert_to_ecef(x, y, z, epsg_input):
-    inp = CRS('epsg:{0}'.format(epsg_input))
-    outp = CRS('epsg:4978')  # ECEF
-    transformer = Transformer.from_crs(inp, outp)
-    return transformer.transform(x, y, z)
-
 
 class TileContentReader(object):
 
