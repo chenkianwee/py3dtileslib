@@ -175,9 +175,9 @@ class Node(object):
             file_path = os.path.join(tile_path, filename)
             content.save_as(file_path)
             
-            gltf = self.tile_content.body.glTF
-            gltf_path = os.path.join(tile_path, str(self.uniqid)+'.glb')
-            gltf.save(gltf_path)
+            # gltf = self.tile_content.body.glTF
+            # gltf_path = os.path.join(tile_path, str(self.uniqid)+'.glb')
+            # gltf.save(gltf_path)
     
             return foldername + '/' + filename
         

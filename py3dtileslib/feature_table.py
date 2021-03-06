@@ -4,355 +4,6 @@ import json
 from enum import Enum
 import numpy as np
 
-
-class Feature(object):
-
-    def __init__(self):
-        self.positions = {}
-        self.colors = {}
-        self.normal = {}
-        
-        self.non_uni_scale = {}
-        self.scale = {}
-        self.normal_up = {}
-        self.normal_right = {}
-        self.batch_id = {}
-        
-    def to_array(self):
-        """
-        convert all the data into a dictionary of arrays
-        
-        Parameters
-        ----------
-
-        Returns
-        -------
-        arr_dictionary : dictionary
-        dictionary that contains all the arr of the feature with these keywords
-        'position', 'color', 'non_uni_scale'
-        """
-        
-        pos_arr = np.array([(self.positions['X'], self.positions['Y'],
-                            self.positions['Z'])]).view(np.uint8)[0]
-
-        if len(self.colors):
-            col_arr = np.array([(self.colors['Red'], self.colors['Green'],
-                                self.colors['Blue'])]).view(np.uint8)[0]
-        else:
-            col_arr = np.array([])
-        
-        
-        if len(self.normal):
-            nrml_arr = np.array([(self.normal['nx'], self.normal['ny'],
-                                 self.normal['nz'])]).view(np.uint8)[0]
-        else:
-            nrml_arr = np.array([])
-        
-        if len(self.non_uni_scale):
-            nus_arr = np.array([(self.non_uni_scale['sx'], self.non_uni_scale['sy'],
-                                 self.non_uni_scale['sz'])]).view(np.uint8)[0]
-        else:
-            nus_arr = np.array([])
-        
-        if len(self.scale):
-            scale_arr = np.array([(self.scale['s'])]).view(np.uint8)
-        else:
-            scale_arr = np.array([])
-        
-        if len(self.normal_up):
-            nrmlup_arr = np.array([(self.normal_up['nux'], self.normal_up['nuy'],
-                                    self.normal_up['nuz'])]).view(np.uint8)[0]
-        else:
-            nrmlup_arr = np.array([])
-            
-        if len(self.normal_right):
-            nrmlright_arr = np.array([(self.normal_right['nrx'], self.normal_right['nry'],
-                                    self.normal_right['nrz'])]).view(np.uint8)[0]
-        else:
-            nrmlright_arr = np.array([])
-            
-        if len(self.batch_id):
-            batch_id_arr = np.array([(self.batch_id['bid'])]).view(np.uint8)
-        else:
-            batch_id_arr = np.array([])
-            
-        array_dict = {'position': pos_arr, 'color':col_arr, 'normal':nrml_arr, 'non_uni_scale': nus_arr,
-                      'scale':scale_arr, 'normal_up': nrmlup_arr, 'normal_right': nrmlright_arr,
-                      'batch_id': batch_id_arr}
-        
-        return array_dict
-
-    @staticmethod
-    def from_values(x, y, z, red=None, green=None, blue=None):
-        f = Feature()
-        pos_dt = np.dtype([('X', '<f4'), ('Y', '<f4'), ('Z', '<f4')])
-        positions = np.array([(x,y,z)], dtype=pos_dt).view('uint8')
-        
-        f.positions = {}
-        
-        off = 0
-        for d in pos_dt.names:
-            dt = pos_dt[d]
-            data = np.array(positions[off:off + dt.itemsize]).view(dt)[0]
-            
-            off += dt.itemsize
-            f.positions[d] = data
-        
-        if red or green or blue:
-            f.colors = {}
-            colour_dt = np.dtype([('Red', np.uint8), ('Green', np.uint8), ('Blue', np.uint8)])
-            colours = np.array([(red, green, blue)], dtype=colour_dt).view('uint8')
-            
-            off1 = 0
-            for d1 in colour_dt.names:
-                dt1 = colour_dt[d1]
-                data1 = np.array(colours[off1:off1 + dt1.itemsize]).view(dt1)[0]
-                
-                off1 += dt1.itemsize
-                f.colors[d1] = data1
-            
-        else:
-            f.colors = {}
-
-        return f
-    
-    @staticmethod
-    def from_array(positions_dtype, positions, colors_dtype=None, colors=None, nrml_dtype = None, nrml = None,
-                   nus_dtype = None, nus = None, scale_dtype = None, scale = None, nrmlup_dtype = None, nrml_up = None,
-                   nrmlright_dtype = None, nrml_right = None, batchid_dtype = None, batchid = None):
-        """
-        Parameters
-        ----------
-        positions_dtype : numpy.dtype
-
-        positions : numpy.array
-            Array of uint8.
-
-        colors_dtype : numpy.dtype
-
-        colors : numpy.array
-            Array of uint8.
-
-        Returns
-        -------
-        f : Feature
-        
-        # create the numpy dtype for positions with 32-bit floating point numbers
-        dt = np.dtype([('X', '<f4'), ('Y', '<f4'), ('Z', '<f4')])
-        dt2 = np.dtype([('Red', np.uint8), ('Green', np.uint8), ('Blue', np.uint8)])
-        position = np.array([(0,1,0)], dtype=dt)
-        colour = np.array([(255,0,0)], dtype=dt2)
-        
-        # create a new feature from a uint8 numpy array
-        f = py3dtileslib.Feature.from_array(dt, position.view('uint8'), colors_dtype=dt2, colors=col.view('uint8'))
-        """
-
-        f = Feature()
-
-        # extract positions
-        f.positions = {}
-        off = 0
-        for d in positions_dtype.names:
-            dt = positions_dtype[d]
-            data = np.array(positions[off:off + dt.itemsize]).view(dt)[0]
-            off += dt.itemsize
-            f.positions[d] = data
-
-        # extract colors
-        f.colors = {}
-        if colors_dtype is not None:
-            off = 0
-            for d in colors_dtype.names:
-                dt = colors_dtype[d]
-                data = np.array(colors[off:off + dt.itemsize]).view(dt)[0]
-                off += dt.itemsize
-                f.colors[d] = data
-        
-        # extract nrml
-        f.normal = {}
-        if nrml_dtype is not None:
-            off = 0
-            for d in nrml_dtype.names:
-                dt = nrml_dtype[d]
-                data = np.array(nrml[off:off + dt.itemsize]).view(dt)[0]
-                off += dt.itemsize
-                
-                f.normal[d] = data
-
-        #extract nus
-        f.non_uni_scale = {}
-        if nus_dtype is not None:
-            off = 0
-            for d in nus_dtype.names:
-                dt = nus_dtype[d]
-                data = np.array(nus[off:off + dt.itemsize]).view(dt)[0]
-                off += dt.itemsize
-                
-                f.non_uni_scale[d] = data
-                
-        #extract scale
-        f.scale = {}
-        if scale_dtype is not None:
-            off = 0
-            for d in scale_dtype.names:
-                dt = scale_dtype[d]
-                data = np.array(scale[off:off + dt.itemsize]).view(dt)[0]
-                off += dt.itemsize
-                
-                f.scale[d] = data
-                
-        #extract nrml up
-        f.normal_up = {}
-        if nrmlup_dtype is not None:
-            off = 0
-            for d in nrmlup_dtype.names:
-                dt = nrmlup_dtype[d]
-                data = np.array(nrml_up[off:off + dt.itemsize]).view(dt)[0]
-                off += dt.itemsize
-                
-                f.normal_up[d] = data
-        
-        f.normal_right = {}
-        if nrmlright_dtype is not None:
-            off = 0
-            for d in nrmlright_dtype.names:
-                dt = nrmlright_dtype[d]
-                data = np.array(nrml_right[off:off + dt.itemsize]).view(dt)[0]
-                off += dt.itemsize
-                
-                f.normal_right[d] = data
-        
-        f.batch_id = {}
-        if batchid_dtype is not None:
-            off = 0
-            for d in batchid_dtype.names:
-                dt = batchid_dtype[d]
-                data = np.array(batchid[off:off + dt.itemsize]).view(dt)[0]
-                off += dt.itemsize
-                
-                f.batch_id[d] = data
-                
-        return f
-    
-    def add_normal(self, normal):
-        """
-        Parameters
-        ----------
-        normal : numpy.array
-            Array of xyz.
-            
-        """
-        # extract normal
-        nrml_dt = np.dtype([('nx', '<f4'), ('ny', '<f4'), ('nz', '<f4')])
-        normal = np.array([tuple(normal)], dtype=nrml_dt).view('uint8')
-        
-        off = 0
-        for d in nrml_dt.names:
-            dt = nrml_dt[d]
-            data = np.array(normal[off:off + dt.itemsize]).view(dt)[0]
-            off += dt.itemsize
-            
-            self.normal[d] = data
-            
-    def add_non_uni_scale(self, non_uni_scale):
-        """
-        Parameters
-        ----------
-        non_uni_scale : tuple of 3
-            tuple of sx, sy, sz
-        
-        """
-        # extract scale
-        non_uni_scale_dt = np.dtype([('sx', '<f4'), ('sy', '<f4'), ('sz', '<f4')])
-        non_uni_scale = np.array([tuple(non_uni_scale)], dtype=non_uni_scale_dt).view('uint8')
-        
-        off = 0
-        for d in non_uni_scale_dt.names:
-            dt = non_uni_scale_dt[d]
-            data = np.array(non_uni_scale[off:off + dt.itemsize]).view(dt)[0]
-            off += dt.itemsize
-            
-            self.non_uni_scale[d] = data
-    
-    def add_scale(self, scale):
-        """
-        Parameters
-        ----------
-        scale : float
-
-        """
-        # extract scale
-        scale_dt = np.dtype([('s', '<f4')])
-        scale = np.array([tuple([scale])], dtype=scale_dt).view('uint8')
-        
-        off = 0
-        for d in scale_dt.names:
-            dt = scale_dt[d]
-            data = np.array(scale[off:off + dt.itemsize]).view(dt)[0]
-            off += dt.itemsize
-            
-            self.scale[d] = data
-    
-    def add_normal_up(self, z_axis):
-        """
-        Parameters
-        ----------
-        z_axis : numpy.array
-            Array of xyz.
-            
-        """
-         # extract scale
-        z_axis_dt = np.dtype([('nux', '<f4'), ('nuy', '<f4'), ('nuz', '<f4')])
-        z_axis = np.array([tuple(z_axis)], dtype=z_axis_dt).view('uint8')
-        
-        off = 0
-        for d in z_axis_dt.names:
-            dt = z_axis_dt[d]
-            data = np.array(z_axis[off:off + dt.itemsize]).view(dt)[0]
-            off += dt.itemsize
-            
-            self.normal_up[d] = data
-            
-    def add_normal_right(self, x_axis):
-        """
-        Parameters
-        ----------
-        x_axis : numpy.array
-            Array of xyz.
-            
-        """
-        # extract scale
-        x_axis_dt = np.dtype([('nrx', '<f4'), ('nry', '<f4'), ('nrz', '<f4')])
-        x_axis = np.array([tuple(x_axis)], dtype=x_axis_dt).view('uint8')
-        
-        off = 0
-        for d in x_axis_dt.names:
-            dt = x_axis_dt[d]
-            data = np.array(x_axis[off:off + dt.itemsize]).view(dt)[0]
-            off += dt.itemsize
-            
-            self.normal_right[d] = data
-    
-    def add_batch_id(self, batch_id):
-        """
-        Parameters
-        ----------
-        batch_id : int
-            The batch id of the feature.
-            
-        """
-        # extract scale
-        batch_id_dt = np.dtype([('bid', np.uint16)])
-        batch_id = np.array([tuple(batch_id)], dtype=batch_id_dt).view('uint8')
-        
-        off = 0
-        for d in batch_id_dt.names:
-            dt = batch_id_dt[d]
-            data = np.array(batch_id[off:off + dt.itemsize]).view(dt)[0]
-            off += dt.itemsize
-            
-            self.batch_id[d] = data
-
 class SemanticPoint(Enum):
 
     NONE = 0
@@ -373,6 +24,158 @@ class SemanticInstance(Enum):
     SCALE = 3
     NON_UNI_SCALE = 4
     BATCHID = 5
+    
+class FeatureTable(object):
+
+    def __init__(self):
+        self.header = FeatureTableHeader()
+        self.body = FeatureTableBody()
+
+    def npoints(self):
+        return self.header.points_length
+
+    def to_array(self, tile_type):
+        fth_arr = self.header.to_array(tile_type)
+        fth_len = len(fth_arr)
+        ftb_arr = self.body.to_array(tile_type, fth_len)
+        if len(ftb_arr) == 0:
+            return fth_arr
+        else:
+            return np.concatenate((fth_arr, ftb_arr))
+
+    @staticmethod
+    def from_array(th, array):
+        """
+        Parameters
+        ----------
+        th : TileHeader
+
+        array : numpy.array
+
+        Returns
+        -------
+        ft : FeatureTable
+        """
+
+        # build feature table header
+        fth_len = th.ft_json_byte_length
+        fth_arr = array[0:fth_len]
+        fth = FeatureTableHeader.from_array(fth_arr)
+
+        # build feature table body
+        ftb_len = th.ft_bin_byte_length
+        ftb_arr = array[fth_len:fth_len + ftb_len]
+        ftb = FeatureTableBody.from_array(fth, ftb_arr)
+
+        # build feature table
+        ft = FeatureTable()
+        ft.header = fth
+        ft.body = ftb
+
+        return ft
+
+    @staticmethod
+    def from_features(features, ft_type, pdtype = None, cdtype = None, normal_dtype = None,
+                      nus_dtype = None, scale_dtype = None, nrmlup_dtype = None, 
+                      nrmlright_dtype = None, batchid_dtype = None):
+        """
+        features: Features object
+            features of each point or instances
+            
+        ft_type: str
+            Either 'pnts' or 'i3dm'
+            
+        pdtype : numpy.dtype
+            Numpy description for positions.
+
+        cdtype : numpy.dtype
+            Numpy description for colors.
+
+        Returns
+        -------
+        ft : FeatureTable
+        """
+        
+        if pdtype == None:
+            pdtype = np.dtype([('X', '<f4'), ('Y', '<f4'), ('Z', '<f4')])
+            
+        if cdtype == None:
+            arr_dict = features[0].to_array()
+            if len(arr_dict['color']) > 0: 
+                cdtype = np.dtype([('Red', np.uint8), ('Green', np.uint8), ('Blue', np.uint8)])
+                
+        if normal_dtype == None:
+            arr_dict = features[0].to_array()
+            if len(arr_dict['normal']) > 0: 
+                normal_dtype = np.dtype([('nx', '<f4'), ('ny', '<f4'), ('nz', '<f4')])
+                
+        if nus_dtype == None:
+            arr_dict = features[0].to_array()
+            if len(arr_dict['non_uni_scale']) > 0: 
+                nus_dtype = np.dtype([('sx', '<f4'), ('sy', '<f4'), ('sz', '<f4')])
+        
+        if scale_dtype == None:
+            arr_dict = features[0].to_array()
+            if len(arr_dict['scale']) > 0: 
+                nus_dtype = np.dtype([('s', '<f4')])
+        
+        if nrmlup_dtype == None:
+            arr_dict = features[0].to_array()
+            if len(arr_dict['normal_up']) > 0: 
+                nrmlup_dtype = np.dtype([('nux', '<f4'), ('nuy', '<f4'), ('nuz', '<f4')])
+        
+        if nrmlright_dtype == None:
+            arr_dict = features[0].to_array()
+            if len(arr_dict['normal_right']) > 0: 
+                nrmlright_dtype = np.dtype([('nrx', '<f4'), ('nry', '<f4'), ('nrz', '<f4')])
+        
+        if batchid_dtype == None:
+            arr_dict = features[0].to_array()
+            if len(arr_dict['batch_id']) > 0: 
+                batchid_dtype = np.dtype([('bid', np.uint16)])
+        
+        fth = FeatureTableHeader.from_dtype(pdtype, len(features), ft_type, colors_dtype = cdtype, normal_dtype = normal_dtype, 
+                                            non_uni_scale_dtype = nus_dtype, scale_dtype = scale_dtype, nrmlup_dtype = nrmlup_dtype, 
+                                            nrmlright_dtype = nrmlright_dtype, batchid_dtype = batchid_dtype)
+        
+        ftb = FeatureTableBody.from_features(fth, features)
+
+        ft = FeatureTable()
+        ft.header = fth
+        ft.body = ftb
+
+        return ft
+
+    def feature(self, n):
+        pos = self.body.positions(n)
+        col = self.body.colors(n)
+        nrml = self.body.normals(n)
+        nus = self.body.non_uni_scale(n)
+        scale = self.body.scale(n)
+        nrml_up = self.body.normal_up(n)
+        nrml_right = self.body.normal_right(n)
+        batchid = self.body.batch_id(n)
+        
+        f = Feature.from_array(self.header.positions_dtype, pos,
+                               self.header.colors_dtype, col)
+        
+        f = Feature.from_array(self.header.positions_dtype, pos, 
+                               colors_dtype=self.header.colors_dtype, colors=col, 
+                               nrml_dtype = self.header.normal_dtype, nrml = nrml,
+                               nus_dtype = self.header.nus_dtype, nus = nus, 
+                               scale_dtype = self.header.scale_dtype, scale = scale, 
+                               nrmlup_dtype = self.header.normal_up_dtype, nrml_up = nrml_up,
+                               nrmlright_dtype = self.header.normal_right_dtype, nrml_right = nrml_right, 
+                               batchid_dtype = self.header.batch_id_dtype, batchid = batchid)
+        
+        return f
+    
+    def add_batch_length(self, batch_length):
+        self.header.batch_length = batch_length
+    
+    def add_rtc(self, rtc):
+        self.header.rtc = rtc
+
 
 class FeatureTableHeader(object):
 
@@ -423,12 +226,19 @@ class FeatureTableHeader(object):
         self.east_north_up = None
         
 
-    def to_array(self):
+    def to_array(self, tile_type):
         jsond = self.to_json()
         json_str = json.dumps(jsond).replace(" ", "")
-        n = len(json_str) + 28
-        json_str += ' ' * (4 - n % 4)
-        # return np.frombuffer(json_str.encode('utf-8'), dtype=np.uint8)
+        
+        
+        if tile_type == 'b3dm' or tile_type == 'pnts':
+            n = len(json_str) + 28
+        elif tile_type == 'i3dm':
+            n = len(json_str) + 32
+        
+        if n%8 !=0:
+            json_str += ' ' * (8 - n % 8)
+            
         return np.fromstring(json_str, dtype=np.uint8)
         
     def to_json(self):
@@ -846,7 +656,7 @@ class FeatureTableBody(object):
         self.batch_id_arr = []
         self.batch_id_itemsize = 0        
 
-    def to_array(self):
+    def to_array(self, tile_type, fth_len):
         arr = self.positions_arr
         
         if len(self.colors_arr):
@@ -870,6 +680,20 @@ class FeatureTableBody(object):
         if len(self.batch_id_arr):
             arr = np.concatenate((arr, self.batch_id_arr))
         
+        
+        
+        if len(arr) !=0:
+            if tile_type == 'pnts' or tile_type == 'b3dm': 
+                n = 28 + fth_len + len(arr)
+            elif tile_type == 'i3dm':
+                n = 32 + fth_len + len(arr)
+                
+            if n%8 !=0:
+                add_byte = 8 - n%8
+                add_arr = np.array([0], dtype = np.byte).view('uint8')
+                add_arr = np.repeat(add_arr, add_byte)
+                arr = np.concatenate((arr, add_arr))
+                
         return arr
 
     @staticmethod
@@ -1001,7 +825,7 @@ class FeatureTableBody(object):
             nus_size = fth.nus_dtype.itemsize
             nus_offset = fth.nus_offset
             b.nus_arr = array[nus_offset:nus_offset + nfeatures * nus_size]
-            b.nus_itemsize = nrml_size
+            b.nus_itemsize = nus_size
         
         # extract scale
         if fth.scale != SemanticInstance.NONE:
@@ -1015,7 +839,7 @@ class FeatureTableBody(object):
             nrmlup_size = fth.normal_up_dtype.itemsize
             nrmlup_offset = fth.normal_up_offset
             b.normal_up_arr = array[nrmlup_offset:nrmlup_offset + nfeatures * nrmlup_size]
-            b.normal_up_itemsize = nrml_size
+            b.normal_up_itemsize = nrmlup_size
         
         # extract normal right 
         if fth.normal_right != SemanticInstance.NONE:
@@ -1078,153 +902,351 @@ class FeatureTableBody(object):
             itemsize = self.batch_id_itemsize
             return self.batch_id_arr[n * itemsize:(n + 1) * itemsize]
         return []
-
-class FeatureTable(object):
+    
+class Feature(object):
 
     def __init__(self):
-        self.header = FeatureTableHeader()
-        self.body = FeatureTableBody()
-
-    def npoints(self):
-        return self.header.points_length
-
+        self.positions = {}
+        self.colors = {}
+        self.normal = {}
+        
+        self.non_uni_scale = {}
+        self.scale = {}
+        self.normal_up = {}
+        self.normal_right = {}
+        self.batch_id = {}
+        
     def to_array(self):
-        fth_arr = self.header.to_array()
-        ftb_arr = self.body.to_array()
-        if len(ftb_arr) == 0:
-            return fth_arr
+        """
+        convert all the data into a dictionary of arrays
+        
+        Parameters
+        ----------
+
+        Returns
+        -------
+        arr_dictionary : dictionary
+        dictionary that contains all the arr of the feature with these keywords
+        'position', 'color', 'non_uni_scale'
+        """
+        
+        pos_arr = np.array([(self.positions['X'], self.positions['Y'],
+                            self.positions['Z'])]).view(np.uint8)[0]
+
+        if len(self.colors):
+            col_arr = np.array([(self.colors['Red'], self.colors['Green'],
+                                self.colors['Blue'])]).view(np.uint8)[0]
         else:
-            return np.concatenate((fth_arr, ftb_arr))
+            col_arr = np.array([])
+        
+        
+        if len(self.normal):
+            nrml_arr = np.array([(self.normal['nx'], self.normal['ny'],
+                                 self.normal['nz'])]).view(np.uint8)[0]
+        else:
+            nrml_arr = np.array([])
+        
+        if len(self.non_uni_scale):
+            nus_arr = np.array([(self.non_uni_scale['sx'], self.non_uni_scale['sy'],
+                                 self.non_uni_scale['sz'])]).view(np.uint8)[0]
+        else:
+            nus_arr = np.array([])
+        
+        if len(self.scale):
+            scale_arr = np.array([(self.scale['s'])]).view(np.uint8)
+        else:
+            scale_arr = np.array([])
+        
+        if len(self.normal_up):
+            nrmlup_arr = np.array([(self.normal_up['nux'], self.normal_up['nuy'],
+                                    self.normal_up['nuz'])]).view(np.uint8)[0]
+        else:
+            nrmlup_arr = np.array([])
+            
+        if len(self.normal_right):
+            nrmlright_arr = np.array([(self.normal_right['nrx'], self.normal_right['nry'],
+                                    self.normal_right['nrz'])]).view(np.uint8)[0]
+        else:
+            nrmlright_arr = np.array([])
+            
+        if len(self.batch_id):
+            batch_id_arr = np.array([(self.batch_id['bid'])]).view(np.uint8)
+        else:
+            batch_id_arr = np.array([])
+            
+        array_dict = {'position': pos_arr, 'color':col_arr, 'normal':nrml_arr, 'non_uni_scale': nus_arr,
+                      'scale':scale_arr, 'normal_up': nrmlup_arr, 'normal_right': nrmlright_arr,
+                      'batch_id': batch_id_arr}
+        
+        return array_dict
 
     @staticmethod
-    def from_array(th, array):
+    def from_values(x, y, z, red=None, green=None, blue=None):
+        f = Feature()
+        pos_dt = np.dtype([('X', '<f4'), ('Y', '<f4'), ('Z', '<f4')])
+        positions = np.array([(x,y,z)], dtype=pos_dt).view('uint8')
+        
+        f.positions = {}
+        
+        off = 0
+        for d in pos_dt.names:
+            dt = pos_dt[d]
+            data = np.array(positions[off:off + dt.itemsize]).view(dt)[0]
+            
+            off += dt.itemsize
+            f.positions[d] = data
+        
+        if red or green or blue:
+            f.colors = {}
+            colour_dt = np.dtype([('Red', np.uint8), ('Green', np.uint8), ('Blue', np.uint8)])
+            colours = np.array([(red, green, blue)], dtype=colour_dt).view('uint8')
+            
+            off1 = 0
+            for d1 in colour_dt.names:
+                dt1 = colour_dt[d1]
+                data1 = np.array(colours[off1:off1 + dt1.itemsize]).view(dt1)[0]
+                
+                off1 += dt1.itemsize
+                f.colors[d1] = data1
+            
+        else:
+            f.colors = {}
+
+        return f
+    
+    @staticmethod
+    def from_array(positions_dtype, positions, colors_dtype=None, colors=None, nrml_dtype = None, nrml = None,
+                   nus_dtype = None, nus = None, scale_dtype = None, scale = None, nrmlup_dtype = None, nrml_up = None,
+                   nrmlright_dtype = None, nrml_right = None, batchid_dtype = None, batchid = None):
         """
         Parameters
         ----------
-        th : TileHeader
+        positions_dtype : numpy.dtype
 
-        array : numpy.array
+        positions : numpy.array
+            Array of uint8.
 
-        Returns
-        -------
-        ft : FeatureTable
-        """
+        colors_dtype : numpy.dtype
 
-        # build feature table header
-        fth_len = th.ft_json_byte_length
-        fth_arr = array[0:fth_len]
-        fth = FeatureTableHeader.from_array(fth_arr)
-
-        # build feature table body
-        ftb_len = th.ft_bin_byte_length
-        ftb_arr = array[fth_len:fth_len + ftb_len]
-        ftb = FeatureTableBody.from_array(fth, ftb_arr)
-
-        # build feature table
-        ft = FeatureTable()
-        ft.header = fth
-        ft.body = ftb
-
-        return ft
-
-    @staticmethod
-    def from_features(features, ft_type, pdtype = None, cdtype = None, normal_dtype = None,
-                      nus_dtype = None, scale_dtype = None, nrmlup_dtype = None, 
-                      nrmlright_dtype = None, batchid_dtype = None):
-        """
-        features: Features object
-            features of each point or instances
-            
-        ft_type: str
-            Either 'pnts' or 'i3dm'
-            
-        pdtype : numpy.dtype
-            Numpy description for positions.
-
-        cdtype : numpy.dtype
-            Numpy description for colors.
+        colors : numpy.array
+            Array of uint8.
 
         Returns
         -------
-        ft : FeatureTable
+        f : Feature
+        
+        # create the numpy dtype for positions with 32-bit floating point numbers
+        dt = np.dtype([('X', '<f4'), ('Y', '<f4'), ('Z', '<f4')])
+        dt2 = np.dtype([('Red', np.uint8), ('Green', np.uint8), ('Blue', np.uint8)])
+        position = np.array([(0,1,0)], dtype=dt)
+        colour = np.array([(255,0,0)], dtype=dt2)
+        
+        # create a new feature from a uint8 numpy array
+        f = py3dtileslib.Feature.from_array(dt, position.view('uint8'), colors_dtype=dt2, colors=col.view('uint8'))
         """
+
+        f = Feature()
+
+        # extract positions
+        f.positions = {}
+        off = 0
+        for d in positions_dtype.names:
+            dt = positions_dtype[d]
+            data = np.array(positions[off:off + dt.itemsize]).view(dt)[0]
+            off += dt.itemsize
+            f.positions[d] = data
+
+        # extract colors
+        f.colors = {}
+        if colors_dtype is not None:
+            off = 0
+            for d in colors_dtype.names:
+                dt = colors_dtype[d]
+                data = np.array(colors[off:off + dt.itemsize]).view(dt)[0]
+                off += dt.itemsize
+                f.colors[d] = data
         
-        if pdtype == None:
-            pdtype = np.dtype([('X', '<f4'), ('Y', '<f4'), ('Z', '<f4')])
-            
-        if cdtype == None:
-            arr_dict = features[0].to_array()
-            if len(arr_dict['color']) > 0: 
-                cdtype = np.dtype([('Red', np.uint8), ('Green', np.uint8), ('Blue', np.uint8)])
+        # extract nrml
+        f.normal = {}
+        if nrml_dtype is not None:
+            off = 0
+            for d in nrml_dtype.names:
+                dt = nrml_dtype[d]
+                data = np.array(nrml[off:off + dt.itemsize]).view(dt)[0]
+                off += dt.itemsize
                 
-        if normal_dtype == None:
-            arr_dict = features[0].to_array()
-            if len(arr_dict['normal']) > 0: 
-                normal_dtype = np.dtype([('nx', '<f4'), ('ny', '<f4'), ('nz', '<f4')])
+                f.normal[d] = data
+
+        #extract nus
+        f.non_uni_scale = {}
+        if nus_dtype is not None:
+            off = 0
+            for d in nus_dtype.names:
+                dt = nus_dtype[d]
+                data = np.array(nus[off:off + dt.itemsize]).view(dt)[0]
+                off += dt.itemsize
                 
-        if nus_dtype == None:
-            arr_dict = features[0].to_array()
-            if len(arr_dict['non_uni_scale']) > 0: 
-                nus_dtype = np.dtype([('sx', '<f4'), ('sy', '<f4'), ('sz', '<f4')])
+                f.non_uni_scale[d] = data
+                
+        #extract scale
+        f.scale = {}
+        if scale_dtype is not None:
+            off = 0
+            for d in scale_dtype.names:
+                dt = scale_dtype[d]
+                data = np.array(scale[off:off + dt.itemsize]).view(dt)[0]
+                off += dt.itemsize
+                
+                f.scale[d] = data
+                
+        #extract nrml up
+        f.normal_up = {}
+        if nrmlup_dtype is not None:
+            off = 0
+            for d in nrmlup_dtype.names:
+                dt = nrmlup_dtype[d]
+                data = np.array(nrml_up[off:off + dt.itemsize]).view(dt)[0]
+                off += dt.itemsize
+                
+                f.normal_up[d] = data
         
-        if scale_dtype == None:
-            arr_dict = features[0].to_array()
-            if len(arr_dict['scale']) > 0: 
-                nus_dtype = np.dtype([('s', '<f4')])
+        f.normal_right = {}
+        if nrmlright_dtype is not None:
+            off = 0
+            for d in nrmlright_dtype.names:
+                dt = nrmlright_dtype[d]
+                data = np.array(nrml_right[off:off + dt.itemsize]).view(dt)[0]
+                off += dt.itemsize
+                
+                f.normal_right[d] = data
         
-        if nrmlup_dtype == None:
-            arr_dict = features[0].to_array()
-            if len(arr_dict['normal_up']) > 0: 
-                nrmlup_dtype = np.dtype([('nux', '<f4'), ('nuy', '<f4'), ('nuz', '<f4')])
-        
-        if nrmlright_dtype == None:
-            arr_dict = features[0].to_array()
-            if len(arr_dict['normal_right']) > 0: 
-                nrmlright_dtype = np.dtype([('nrx', '<f4'), ('nry', '<f4'), ('nrz', '<f4')])
-        
-        if batchid_dtype == None:
-            arr_dict = features[0].to_array()
-            if len(arr_dict['batch_id']) > 0: 
-                batchid_dtype = np.dtype([('bid', np.uint16)])
-        
-        fth = FeatureTableHeader.from_dtype(pdtype, len(features), ft_type, colors_dtype = cdtype, normal_dtype = normal_dtype, 
-                                            non_uni_scale_dtype = nus_dtype, scale_dtype = scale_dtype, nrmlup_dtype = nrmlup_dtype, 
-                                            nrmlright_dtype = nrmlright_dtype, batchid_dtype = batchid_dtype)
-        
-        ftb = FeatureTableBody.from_features(fth, features)
-
-        ft = FeatureTable()
-        ft.header = fth
-        ft.body = ftb
-
-        return ft
-
-    def feature(self, n):
-        pos = self.body.positions(n)
-        col = self.body.colors(n)
-        nrml = self.body.normals(n)
-        nus = self.body.non_uni_scale(n)
-        scale = self.body.scale(n)
-        nrml_up = self.body.normal_up(n)
-        nrml_right = self.body.normal_right(n)
-        batchid = self.body.batch_id(n)
-        
-        f = Feature.from_array(self.header.positions_dtype, pos,
-                               self.header.colors_dtype, col)
-        
-        f = Feature.from_array(self.header.positions_dtype, pos, 
-                               colors_dtype=self.header.colors_dtype, colors=col, 
-                               nrml_dtype = self.header.normal_dtype, nrml = nrml,
-                               nus_dtype = self.header.nus_dtype, nus = nus, 
-                               scale_dtype = self.header.scale_dtype, scale = scale, 
-                               nrmlup_dtype = self.header.normal_up_dtype, nrml_up = nrml_up,
-                               nrmlright_dtype = self.header.normal_right_dtype, nrml_right = nrml_right, 
-                               batchid_dtype = self.header.batch_id_dtype, batchid = batchid)
-        
+        f.batch_id = {}
+        if batchid_dtype is not None:
+            off = 0
+            for d in batchid_dtype.names:
+                dt = batchid_dtype[d]
+                data = np.array(batchid[off:off + dt.itemsize]).view(dt)[0]
+                off += dt.itemsize
+                
+                f.batch_id[d] = data
+                
         return f
     
-    def add_batch_length(self, batch_length):
-        self.header.batch_length = batch_length
+    def add_normal(self, normal):
+        """
+        Parameters
+        ----------
+        normal : numpy.array
+            Array of xyz.
+            
+        """
+        # extract normal
+        nrml_dt = np.dtype([('nx', '<f4'), ('ny', '<f4'), ('nz', '<f4')])
+        normal = np.array([tuple(normal)], dtype=nrml_dt).view('uint8')
+        
+        off = 0
+        for d in nrml_dt.names:
+            dt = nrml_dt[d]
+            data = np.array(normal[off:off + dt.itemsize]).view(dt)[0]
+            off += dt.itemsize
+            
+            self.normal[d] = data
+            
+    def add_non_uni_scale(self, non_uni_scale):
+        """
+        Parameters
+        ----------
+        non_uni_scale : tuple of 3
+            tuple of sx, sy, sz
+        
+        """
+        # extract scale
+        non_uni_scale_dt = np.dtype([('sx', '<f4'), ('sy', '<f4'), ('sz', '<f4')])
+        non_uni_scale = np.array([tuple(non_uni_scale)], dtype=non_uni_scale_dt).view('uint8')
+        
+        off = 0
+        for d in non_uni_scale_dt.names:
+            dt = non_uni_scale_dt[d]
+            data = np.array(non_uni_scale[off:off + dt.itemsize]).view(dt)[0]
+            off += dt.itemsize
+            
+            self.non_uni_scale[d] = data
     
-    def add_rtc(self, rtc):
-        self.header.rtc = rtc
+    def add_scale(self, scale):
+        """
+        Parameters
+        ----------
+        scale : float
+
+        """
+        # extract scale
+        scale_dt = np.dtype([('s', '<f4')])
+        scale = np.array([tuple([scale])], dtype=scale_dt).view('uint8')
+        
+        off = 0
+        for d in scale_dt.names:
+            dt = scale_dt[d]
+            data = np.array(scale[off:off + dt.itemsize]).view(dt)[0]
+            off += dt.itemsize
+            
+            self.scale[d] = data
+    
+    def add_normal_up(self, z_axis):
+        """
+        Parameters
+        ----------
+        z_axis : numpy.array
+            Array of xyz.
+            
+        """
+         # extract scale
+        z_axis_dt = np.dtype([('nux', '<f4'), ('nuy', '<f4'), ('nuz', '<f4')])
+        z_axis = np.array([tuple(z_axis)], dtype=z_axis_dt).view('uint8')
+        
+        off = 0
+        for d in z_axis_dt.names:
+            dt = z_axis_dt[d]
+            data = np.array(z_axis[off:off + dt.itemsize]).view(dt)[0]
+            off += dt.itemsize
+            
+            self.normal_up[d] = data
+            
+    def add_normal_right(self, x_axis):
+        """
+        Parameters
+        ----------
+        x_axis : numpy.array
+            Array of xyz.
+            
+        """
+        # extract scale
+        x_axis_dt = np.dtype([('nrx', '<f4'), ('nry', '<f4'), ('nrz', '<f4')])
+        x_axis = np.array([tuple(x_axis)], dtype=x_axis_dt).view('uint8')
+        
+        off = 0
+        for d in x_axis_dt.names:
+            dt = x_axis_dt[d]
+            data = np.array(x_axis[off:off + dt.itemsize]).view(dt)[0]
+            off += dt.itemsize
+            
+            self.normal_right[d] = data
+    
+    def add_batch_id(self, batch_id):
+        """
+        Parameters
+        ----------
+        batch_id : int
+            The batch id of the feature.
+            
+        """
+        # extract scale
+        batch_id_dt = np.dtype([('bid', np.uint16)])
+        batch_id = np.array([tuple([batch_id])], dtype=batch_id_dt).view('uint8')
+        
+        off = 0
+        for d in batch_id_dt.names:
+            dt = batch_id_dt[d]
+            data = np.array(batch_id[off:off + dt.itemsize]).view(dt)[0]
+            off += dt.itemsize
+            
+            self.batch_id[d] = data

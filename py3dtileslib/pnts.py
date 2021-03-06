@@ -123,14 +123,27 @@ class PntsHeader(TileHeader):
         """
 
         # extract array
-        fth_arr = body.feature_table.header.to_array()
-        ftb_arr = body.feature_table.body.to_array()
+        fth_arr = body.feature_table.header.to_array('pnts')
+        ftb_arr = body.feature_table.body.to_array('pnts', len(fth_arr))
 
         # sync the tile header with feature table contents
         self.tile_byte_length = (len(fth_arr) + len(ftb_arr)
                                  + PntsHeader.BYTELENGTH)
+        
         self.ft_json_byte_length = len(fth_arr)
         self.ft_bin_byte_length = len(ftb_arr)
+        
+        if body.batch_table is not None:
+            ft_len = len(fth_arr) + len(ftb_arr)
+            bth_arr = body.batch_table.header.to_array('pnts', ft_len)
+            btb_arr = body.batch_table.body.to_array(body.batch_table.header, 'pnts', ft_len, len(bth_arr))
+    
+            self.tile_byte_length += len(bth_arr)
+            self.bt_json_byte_length = len(bth_arr)
+            
+            self.tile_byte_length += len(btb_arr)
+            self.bt_bin_byte_length = len(btb_arr)
+            
 
     @staticmethod
     def from_array(array):
@@ -167,9 +180,9 @@ class PntsBody(TileBody):
         self.batch_table = BatchTable()
 
     def to_array(self):
-        ft_arr = self.feature_table.to_array()
+        ft_arr = self.feature_table.to_array('pnts')
         if self.batch_table is not None:
-            ft_arr = np.concatenate((ft_arr, self.batch_table.to_array()))
+            ft_arr = np.concatenate((ft_arr, self.batch_table.to_array('pnts', len(ft_arr))))
             
         return ft_arr
 
@@ -186,21 +199,15 @@ class PntsBody(TileBody):
         -------
         b : TileBody
         """
-
         # build feature table
         ft_len = th.ft_json_byte_length + th.ft_bin_byte_length
         ft_arr = array[0:ft_len]
         ft = FeatureTable.from_array(th, ft_arr)
-
-        # build batch table
-        bt_json_len = th.bt_json_byte_length
-        bt_json_arr = array[ft_len:ft_len + bt_json_len]
         
-        # bt_bin_len = th.bt_bin_byte_length
-        # bt_bin_arr = array[ft_len + bt_json_len:ft_len + bt_json_len + bt_bin_len]
-        
-        bt = BatchTable()
-        bt.from_array(bt_json_arr)
+        # build batch table       
+        bt_len = th.bt_json_byte_length + th.bt_bin_byte_length
+        bt_arr = array[ft_len:ft_len + bt_len]
+        bt = BatchTable.from_array(th, ft, bt_arr)
         
         # build tile body with feature table
         b = PntsBody()

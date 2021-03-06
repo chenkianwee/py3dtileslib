@@ -63,7 +63,9 @@ class I3dm(TileContent):
         # build tile header
         h_arr = array[0:I3dmHeader.BYTELENGTH]
         h = I3dmHeader.from_array(h_arr)
-
+        print('Documented tile', h.tile_byte_length)
+        print('Documented bt bin', h.bt_bin_byte_length)
+        print('actual count', len(array))
         if h.tile_byte_length != len(array):
             raise RuntimeError("Invalid byte length in header")
 
@@ -123,22 +125,26 @@ class I3dmHeader(TileHeader):
         self.ft_bin_byte_length = 0
         self.gltf_format = 1
         
-        if body.batch_table is not None:
-            bth_arr = body.batch_table.to_array()
-            # btb_arr = body.batch_table.body.to_array()
-
-            self.tile_byte_length += len(bth_arr)
-            self.bt_json_byte_length = len(bth_arr)
-            
         if body.feature_table is not None:
-            fth_arr = body.feature_table.header.to_array()
-            ftb_arr = body.feature_table.body.to_array()
+            fth_arr = body.feature_table.header.to_array('i3dm')
+            ftb_arr = body.feature_table.body.to_array('i3dm', len(fth_arr))
             self.tile_byte_length += len(fth_arr)
             self.ft_json_byte_length = len(fth_arr)
             
             self.tile_byte_length += len(ftb_arr)
             self.ft_bin_byte_length = len(ftb_arr)
-
+            
+        if body.batch_table is not None:
+            ft_len = len(fth_arr) + len(ftb_arr)
+            bth_arr = body.batch_table.header.to_array('i3dm', ft_len)
+            btb_arr = body.batch_table.body.to_array(body.batch_table.header, 'i3dm', ft_len, len(bth_arr))
+            
+            self.tile_byte_length += len(bth_arr)
+            self.bt_json_byte_length = len(bth_arr)
+            
+            self.tile_byte_length += len(btb_arr)
+            self.bt_bin_byte_length = len(btb_arr)
+            
     @staticmethod
     def from_array(array):
         """
@@ -176,11 +182,13 @@ class I3dmBody(TileBody):
 
     def to_array(self):
         array = utils.glb2arr(self.glTF)
+        ft_arr = self.feature_table.to_array('i3dm')
         if self.batch_table is not None:
-            array = np.concatenate((self.batch_table.to_array(), array))
+            bt_arr = self.batch_table.to_array('i3dm', len(ft_arr))
+            array = np.concatenate((bt_arr, array))
             
-        array = np.concatenate((self.feature_table.to_array(), array))
-            
+        array = np.concatenate((ft_arr, array))
+        
         return array
 
     @staticmethod
@@ -202,15 +210,10 @@ class I3dmBody(TileBody):
         ft_arr = array[0:ft_len]
         ft = FeatureTable.from_array(th, ft_arr)
         
-        # build batch table
-        bt_json_len = th.bt_json_byte_length
-        bt_json_arr = array[ft_len:ft_len + bt_json_len]
-        
-        # bt_bin_len = th.bt_bin_byte_length
-        # bt_bin_arr = array[ft_len + bt_json_len:ft_len + bt_json_len + bt_bin_len]
-        
-        bt = BatchTable()
-        bt.from_array(bt_json_arr)
+        # build batch table       
+        bt_len = th.bt_json_byte_length + th.bt_bin_byte_length
+        bt_arr = array[ft_len:ft_len + bt_len]
+        bt = BatchTable.from_array(th, ft, bt_arr)
 
         # build glTF
         bt_len = th.bt_json_byte_length + th.bt_bin_byte_length
