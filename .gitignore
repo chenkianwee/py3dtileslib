@@ -50,6 +50,7 @@ Temporary Items
 .pyc
 =======
 *.pyc
+__pycache__/
 
 # exclude PyCharm files
 .idea/
