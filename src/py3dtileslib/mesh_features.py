@@ -21,7 +21,7 @@ def add_extmeshfeatures_by_vertex(gltf_prim: Primitive, gltf: GLTF2, featureid: 
     Parameters
     ----------
     featureid : List[Union[float, int]]
-        list of the feature id
+        list of the feature id. Number of feature id needs to be the same as the number of vertices.
     """
     # get the data from the gltf file
     accessor = gltf.accessors[gltf_prim.attributes.POSITION]
@@ -64,5 +64,9 @@ def add_extmeshfeatures_by_vertex(gltf_prim: Primitive, gltf: GLTF2, featureid: 
     uniq = np.unique(featureid)
     featureIds_json = {"featureIds": [{"featureCount": len(uniq), "attribute": 0 }]}
     exts = gltf_prim.extensions
-    exts['EXT_mesh_features'] = featureIds_json
+    if 'EXT_mesh_features' not in exts.keys():
+        exts['EXT_mesh_features'] = featureIds_json
+    else:
+        print('Overwriting existing EXT mesh features')
+        exts['EXT_mesh_features'] = featureIds_json
     

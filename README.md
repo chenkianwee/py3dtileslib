@@ -7,9 +7,6 @@ https://gitlab.com/Oslandia/py3dtiles
 ## Example
 
     ```
-    import base64
-    import struct
-
     import numpy as np
     import geomie3d
     import py3dtileslib
