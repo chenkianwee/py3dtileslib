@@ -10,6 +10,6 @@ from .batch_table import BatchTable
 from .tileset import Node, Tileset
 from . import mesh_features, struct_metadata, cesium_prim_outline
 
-__version__ = '2.0.0'
-__all__ = ['TileContentReader', 'convert_to_ecef', 'TileContent', 'Feature', 'FeatureTable', 'GlTF', 'Pnts',
-           'B3dm', 'I3dm', 'BatchTable', 'TriangleSoup', 'Node', 'Tileset']
+__version__ = '0.0.1'
+__all__ = ['mesh_features', 'struct_metadata', 'cesium_prim_outline', 'tile', 'tileset', 'utils', 
+           'b3dm', 'batch_table', 'feature_table', 'gltftile', 'i3dm', 'pnts']

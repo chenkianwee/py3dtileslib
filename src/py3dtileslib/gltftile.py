@@ -2,6 +2,8 @@ import struct
 import numpy as np
 
 from . import utils 
+from .b3dm import B3dmBody, B3dmHeader
+from .tile import TileContent
 
 class GltfTile(object):
 

@@ -75,31 +75,31 @@ def add_outline2prim(gltf_prim: Primitive, gltf: GLTF2, buffer_indx: int):
     nrml_idx = geomie3d.utility.separate_dup_non_dup(uniq_tri_nrml[1])
     non_dup_nidx = nrml_idx[0]
     dup_nidx = nrml_idx[1]
-    dup_nidx = np.sort(dup_nidx, axis=0)
-    
     outline_idxs = []
     if len(non_dup_nidx) != 0:
         indv_tri = np.take(indxs, non_dup_nidx, axis=0)
         outlines_tri = np.repeat(indv_tri, 2, axis=1)
         outlines_tri = np.roll(outlines_tri, -1, axis=1)
+        outlines_tri_shape = np.shape(outlines_tri)
+        outlines_tri = np.reshape(outlines_tri, (outlines_tri_shape[0]*3, 2)) # remove the trianges to just edges
         outline_idxs.extend(outlines_tri)
     
     if len(dup_nidx) != 0:
-        dup_tris = np.take(indxs, dup_nidx, axis=0) # take all the triangles that have the same normals
-        edges_tri = np.repeat(dup_tris, 2, axis=2) # transform the triangles from vertices to edges 
-        edges_tri = np.roll(edges_tri, -1, axis=2) # transform the triangles from vertices to edges
-        edges_tri_shape = np.shape(edges_tri) 
-        edges_tri = np.reshape(edges_tri, (edges_tri_shape[0], edges_tri_shape[1], 3, 2)) # transform the triangles from vertices to edges
-        edges_tri_sort = np.sort(edges_tri) # sort the indices for identifying duplicates
-        edges_tri_sort = np.reshape(edges_tri_sort, (edges_tri_shape[0], edges_tri_shape[1]*3, 2)) # remove the trianges to just edges
-        edges_tri = np.reshape(edges_tri, (edges_tri_shape[0], edges_tri_shape[1]*3, 2)) # remove the trianges to just edges
-
-        for cnt, grp in enumerate(edges_tri_sort): # compare the edges for each normal
-            uniq_edges_tri = np.unique(grp, axis=0, return_inverse=True)
+        for grp in dup_nidx: # compare the edges for each normal
+            dup_tris = np.take(indxs, grp, axis=0) # take all the triangles that have the same normals
+            edges_tri = np.repeat(dup_tris, 2, axis=1) # transform the triangles from vertices to edges 
+            edges_tri = np.roll(edges_tri, -1, axis=1) # transform the triangles from vertices to edges
+            edges_tri_shape = np.shape(edges_tri)
+            edges_tri = np.reshape(edges_tri, (edges_tri_shape[0], 3, 2)) # transform the triangles from vertices to edges
+            edges_tri_sort = np.sort(edges_tri) # sort the indices for identifying duplicates
+            edges_tri_sort = np.reshape(edges_tri_sort, (edges_tri_shape[0]*3, 2)) # remove the trianges to just edges
+            edges_tri = np.reshape(edges_tri, (edges_tri_shape[0]*3, 2)) # remove the trianges to just edges
+            uniq_edges_tri = np.unique(edges_tri_sort, axis=0, return_inverse=True)
             non_dup_idx, dup_idx = geomie3d.utility.separate_dup_non_dup(uniq_edges_tri[1])
-            srf_outlines = np.take(edges_tri[cnt], np.array(non_dup_idx, dtype='int'), axis=0)
+            srf_outlines = np.take(edges_tri, np.array(non_dup_idx, dtype='int'), axis=0)
             outline_idxs.extend(srf_outlines)
 
+    # print(outline_idxs)
     outline_idxs = np.array(outline_idxs)
     outline_idxs_sort = np.sort(outline_idxs)
     uniq_edges = np.unique(outline_idxs_sort, axis=0, return_index=True) # find all the non overlapping outlines
@@ -128,7 +128,7 @@ def add_outline2prim(gltf_prim: Primitive, gltf: GLTF2, buffer_indx: int):
     #------------------------------------------------------------------------
     # pack the outline indices and extend it onto the data array
     # packed_outline_idxs = utils.pack_att(uniq_edges, '<H')
-    packed_outline_idxs = utils.pack_att(uniq_edges, '<I')
+    packed_outline_idxs = utils.pack_att(uniq_edges, '<h')
     offset = len(data_arr)
     length = len(packed_outline_idxs)
     data_arr.extend(packed_outline_idxs)
@@ -145,7 +145,7 @@ def add_outline2prim(gltf_prim: Primitive, gltf: GLTF2, buffer_indx: int):
     accessor1 = Accessor()
     accessor1.bufferView = len(gltf.bufferViews) - 1
     accessor1.byteOffset = 0
-    accessor1.componentType = 5125 #UNSIGNED_SHORT #5122
+    accessor1.componentType = 5122 #5125 #UNSIGNED_SHORT 
     accessor1.count = len(uniq_edges)
     accessor1.type = SCALAR
     accessor1.max = [int(max(uniq_edges))]

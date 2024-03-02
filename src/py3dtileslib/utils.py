@@ -567,7 +567,7 @@ def compute_tile_bbox_frm_bbox(bbox, geo_loc = None):
     Tuple of 12 numbers that define the bbox for bvol of a 3dtile 
     
     """
-    midpt = geomie3d.calculate.bbox_centre(bbox).tolist()
+    midpt = geomie3d.calculate.bboxes_centre([bbox])[0].tolist()
     bbox_arr = bbox.bbox_arr
     x_half_len = (bbox_arr[3] - bbox_arr[0])/2
     x_axis = [x_half_len, 0.0, 0.0]
