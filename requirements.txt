@@ -1,3 +1,5 @@
 numpy==1.26.3
 pyproj==3.6.1
 pygltflib==1.16.0
+scipy==1.12.0
+geomie3d==0.0.7
